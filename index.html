@@ -51,7 +51,7 @@
                         <img class="img-fluid" src="img/icon-deal.png" alt="Icon" style="width: 30px; height: 30px;">
                     </div>
                     <h1 <span class="m-0 text-primary">RiverStone</h1>
-                        <sub class="m-0 text-primary">Rental Homes & Investings</h1>
+                        <p><sub class="m-0 text-primary">Rental Homes & Investings</h1></p>
                 </a>
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
                     <span class="navbar-toggler-icon"></span>
@@ -930,6 +930,17 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
+ <div class="chat-popup" id="myForm">
+  <form action="/action_page.php" class="form-container">
+    <h1>Chat</h1>
+
+    <label for="msg"><b>Message</b></label>
+    <textarea placeholder="Type message.." name="msg" required></textarea>
+
+    <button type="submit" class="btn">Send</button>
+    <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+  </form>
+</div> 
 </body>
 
 </html>
