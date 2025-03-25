@@ -3,48 +3,162 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Budget Planner</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Budget Planner - RiverStone</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="img/RiverStonelogo.png">
+
+  <!-- Google Web Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Inter:wght@700;800&display=swap" rel="stylesheet">
+
+  <!-- Icon Font Stylesheet -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Libraries Stylesheet -->
+  <link href="lib/animate/animate.min.css" rel="stylesheet">
+  <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+  <!-- Customized Bootstrap Stylesheet -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Template Stylesheet -->
+  <link href="css/style.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-  <div class="container mt-5">
-    <h1 class="text-center mb-4">Simple Budget Planner</h1>
-    <div class="card p-4 shadow">
-      <form>
-        <div class="mb-3">
-          <label for="income" class="form-label">Monthly Income:</label>
-          <input type="number" class="form-control" id="income" placeholder="Enter your income">
-        </div>
-        <div class="mb-3">
-          <label for="expense" class="form-label">Add Expense:</label>
-          <input type="number" class="form-control" id="expense" placeholder="Enter an expense">
-        </div>
-        <button type="button" class="btn btn-primary mb-3" onclick="addExpense()">Add Expense</button>
-        <div class="mb-3">
-          <p><strong>Total Expenses:</strong> <span id="totalExpenses">0</span></p>
-          <p><strong>Remaining Balance:</strong> <span id="balance">0</span></p>
-        </div>
-      </form>
+<body>
+  <div class="container-xxl bg-white p-0">
+    <!-- Spinner Start -->
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
     </div>
+    <!-- Spinner End -->
+
+    <!-- Navbar Start -->
+    <div class="container-fluid nav-bar bg-transparent">
+      <nav class="navbar navbar-expand-lg bg-white navbar-light py-0 px-4">
+        <a href="index.html" class="navbar-brand d-flex align-items-center text-center">
+          <div class="icon p-2 me-2">
+            <img class="img-fluid" src="img/icon-deal.png" alt="Icon" style="width: 30px; height: 30px;">
+          </div>
+          <h1 class="m-0 text-primary">RiverStone</h1>
+          <sub class="m-0 text-primary">Budget Planner</sub>
+        </a>
+        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <div class="navbar-nav ms-auto">
+            <a href="index.html" class="nav-item nav-link">Home</a>
+            <a href="about.html" class="nav-item nav-link">About</a>
+            <a href="#" class="nav-item nav-link active">Budget Planner</a>
+            <a href="contact.html" class="nav-item nav-link">Contact</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+    <!-- Navbar End -->
+
+    <!-- Content Section -->
+    <div class="container mt-5">
+      <h1 class="text-center mb-4">Advanced Budget Planner</h1>
+
+      <!-- Input Section -->
+      <div class="card p-4 shadow mb-4 wow fadeIn" data-wow-delay="0.1s">
+        <form>
+          <div class="mb-3">
+            <label for="income" class="form-label">Monthly Income:</label>
+            <input type="number" class="form-control" id="income" placeholder="Enter your income">
+          </div>
+          <div class="mb-3">
+            <label for="expenseName" class="form-label">Expense Name:</label>
+            <input type="text" class="form-control" id="expenseName" placeholder="Enter expense name">
+          </div>
+          <div class="mb-3">
+            <label for="expense" class="form-label">Expense Amount:</label>
+            <input type="number" class="form-control" id="expense" placeholder="Enter expense amount">
+          </div>
+          <button type="button" class="btn btn-primary mt-2" onclick="addExpense()">Add Expense</button>
+        </form>
+      </div>
+
+      <!-- Expense List Section -->
+      <h2>Expense List</h2>
+      <table class="table table-bordered wow fadeInUp" data-wow-delay="0.2s">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Expense Name</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody id="expenseTable">
+          <!-- Expenses will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-dark text-white-50 footer pt-5 mt-5 wow fadeIn" data-wow-delay="0.1s">
+      <div class="container py-5">
+        <div class="row g-5">
+          <div class="col-lg-3 col-md-6">
+            <h5 class="text-white mb-4">Get In Touch</h5>
+            <p class="mb-2"><i class="fa fa-map-marker-alt me-3"></i>123 Street, New York, USA</p>
+            <p class="mb-2"><i class="fa fa-phone-alt me-3"></i>+012 345 67890</p>
+            <p class="mb-2"><i class="fa fa-envelope me-3"></i>info@example.com</p>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <h5 class="text-white mb-4">Quick Links</h5>
+            <a class="btn btn-link text-white-50" href="">About Us</a>
+            <a class="btn btn-link text-white-50" href="">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Footer End -->
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
   </div>
 
+  <!-- JavaScript to Hide Spinner -->
   <script>
-    let totalExpenses = 0;
+    window.onload = function () {
+      const spinner = document.getElementById('spinner');
+      if (spinner) {
+        spinner.classList.remove('show'); // Hide the spinner
+      }
+    };
 
+    // Example function for adding expense (simplified for demonstration)
+    let expenseCount = 0;
     function addExpense() {
-      const income = parseFloat(document.getElementById('income').value) || 0;
-      const expense = parseFloat(document.getElementById('expense').value) || 0;
+      const expenseName = document.getElementById('expenseName').value;
+      const expenseAmount = document.getElementById('expense').value;
 
-      totalExpenses += expense;
-      const balance = income - totalExpenses;
+      if (!expenseName || !expenseAmount) return;
 
-      document.getElementById('totalExpenses').textContent = totalExpenses.toFixed(2);
-      document.getElementById('balance').textContent = balance.toFixed(2);
+      expenseCount++;
+      const expenseTable = document.getElementById('expenseTable');
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${expenseCount}</td><td>${expenseName}</td><td>$${expenseAmount}</td>`;
+      expenseTable.appendChild(row);
 
-      document.getElementById('expense').value = ''; // Clear expense input
+      // Reset input fields
+      document.getElementById('expenseName').value = '';
+      document.getElementById('expense').value = '';
     }
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JavaScript Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="lib/wow/wow.min.js"></script>
+  <script>
+    new WOW().init(); // Initialize WOW.js for animations
+  </script>
 </body>
 </html>

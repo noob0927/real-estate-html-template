@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banking Pay Card System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h1 class="text-center mb-4">Enhanced Banking Pay Card System</h1>
+
+    <!-- Card Display -->
+    <div class="card text-white bg-primary mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Pay Card</h5>
+        <p class="card-text">
+          <strong>Card Number:</strong> **** **** **** 1234 <br>
+          <strong>Cardholder Name:</strong> John Doe <br>
+          <strong>Balance:</strong> $<span id="cardBalance">0.00</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Spending Limit Section -->
+    <div class="card p-4 shadow mb-4">
+      <h2 class="mb-3">Set Spending Limit</h2>
+      <form>
+        <div class="mb-3">
+          <label for="spendingLimit" class="form-label">Monthly Spending Limit:</label>
+          <input type="number" class="form-control" id="spendingLimit" placeholder="Enter limit">
+        </div>
+        <button type="button" class="btn btn-danger mt-2" onclick="setSpendingLimit()">Set Limit</button>
+        <p class="text-warning mt-2"><strong id="limitAlert"></strong></p>
+      </form>
+    </div>
+
+    <!-- Transaction Input Section -->
+    <div class="card p-4 shadow mb-4">
+      <form>
+        <div class="mb-3">
+          <label for="transactionType" class="form-label">Transaction Type:</label>
+          <select class="form-select" id="transactionType">
+            <option value="credit">Credit</option>
+            <option value="debit">Debit</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="transactionAmount" class="form-label">Amount:</label>
+          <input type="number" class="form-control" id="transactionAmount" placeholder="Enter amount">
+        </div>
+        <div class="mb-3">
+          <label for="transactionCategory" class="form-label">Category:</label>
+          <input type="text" class="form-control" id="transactionCategory" placeholder="Enter category (e.g., groceries)">
+        </div>
+        <button type="button" class="btn btn-primary mt-2" onclick="addTransaction()">Add Transaction</button>
+      </form>
+    </div>
+
+    <!-- Transaction History Section -->
+    <h2>Transaction History</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Category</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="transactionTable">
+        <!-- Transactions will be dynamically added here -->
+      </tbody>
+    </table>
+
+    <!-- Visual Analysis Section -->
+    <div class="card p-4 shadow mt-4">
+      <h2 class="mb-3">Visual Analysis</h2>
+      <canvas id="incomeVsExpenses" class="mb-4" height="200"></canvas>
+      <canvas id="expenseBreakdown" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let cardBalance = 0;
+    let transactions = [];
+    let spendingLimit = 0;
+
+    function setSpendingLimit() {
+      spendingLimit = parseFloat(document.getElementById('spendingLimit').value) || 0;
+      document.getElementById('limitAlert').textContent = `Spending limit set to $${spendingLimit.toFixed(2)}`;
+    }
+
+    function addTransaction() {
+      const transactionType = document.getElementById('transactionType').value;
+      const transactionAmount = parseFloat(document.getElementById('transactionAmount').value) || 0;
+      const transactionCategory = document.getElementById('transactionCategory').value || "Uncategorized";
+      const transactionDate = new Date().toLocaleString();
+
+      // Adjust balance based on transaction type
+      if (transactionType === 'credit') {
+        cardBalance += transactionAmount;
+      } else if (transactionType === 'debit') {
+        cardBalance -= transactionAmount;
+      }
+
+      // Update balance display
+      document.getElementById('cardBalance').textContent = cardBalance.toFixed(2);
+
+      // Add transaction to list
+      transactions.push({
+        type: transactionType,
+        amount: transactionAmount,
+        category: transactionCategory,
+        date: transactionDate,
+      });
+
+      // Update transaction history table
+      const transactionTable = document.getElementById('transactionTable');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${transactions.length}</td>
+        <td>${transactionType}</td>
+        <td>$${transactionAmount.toFixed(2)}</td>
+        <td>${transactionCategory}</td>
+        <td>${transactionDate}</td>
+      `;
+      transactionTable.appendChild(row);
+
+      // Check spending limit
+      if (transactionType === 'debit' && spendingLimit > 0 && cardBalance < -spendingLimit) {
+        document.getElementById('limitAlert').textContent = "Warning: Spending limit exceeded!";
+      }
+
+      // Clear inputs
+      document.getElementById('transactionAmount').value = '';
+      document.getElementById('transactionCategory').value = '';
+
+      // Update visualizations
+      updateVisuals();
+    }
+
+    function updateVisuals() {
+      // Income vs Expenses Bar Chart
+      const incomeVsExpensesCtx = document.getElementById('incomeVsExpenses').getContext('2d');
+      const income = transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+      const expenses = transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
+      new Chart(incomeVsExpensesCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Income', 'Expenses'],
+          datasets: [{
+            label: 'Income vs Expenses',
+            data: [income, expenses],
+            backgroundColor: ['rgba(75, 192, 192, 0.5)', 'rgba(255, 99, 132, 0.5)'],
+            borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+            borderWidth: 1,
+          }],
+        },
+      });
+
+      // Expense Breakdown Pie Chart
+      const expenseBreakdownCtx = document.getElementById('expenseBreakdown').getContext('2d');
+      const categories = [...new Set(transactions.filter(t => t.type === 'debit').map(t => t.category))];
+      const categorySums = categories.map(category =>
+        transactions.filter(t => t.type === 'debit' && t.category === category).reduce((sum, t) => sum + t.amount, 0)
+      );
+      new Chart(expenseBreakdownCtx, {
+        type: 'pie',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: categorySums,
+            backgroundColor: categories.map((_, i) => `rgba(${100 + i * 30}, ${150 - i * 20}, ${255 - i * 10}, 0.5)`),
+            borderWidth: 1,
+          }],
+        },
+      });
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
