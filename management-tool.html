@@ -27,25 +27,17 @@
 </head>
 <body>
   <div class="container-xxl bg-white p-0">
-    <!-- Spinner Start -->
-    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
-      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-        <span class="sr-only">And Now We Wait...</span>
-      </div>
-    </div>
-    <!-- Spinner End -->
-
     <!-- Navbar Start -->
     <div class="container-fluid nav-bar bg-transparent">
       <nav class="navbar navbar-expand-lg bg-white navbar-light py-0 px-4">
         <a href="index.html" class="navbar-brand d-flex align-items-center text-center">
           <div class="icon p-2 me-2">
-            <img class="img-fluid" src="img/icon-deal.png" alt="Icon" style="width: 30px; height: 30px;">
+            <img class="img-fluid icon-img" src="img/icon-deal.png" alt="Icon">
           </div>
           <h1 class="m-0 text-primary">RiverStone</h1>
           <sub class="m-0 text-primary">Employee Management</sub>
         </a>
-        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" title="Toggle navigation" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -54,6 +46,15 @@
             <a href="about.html" class="nav-item nav-link">About</a>
             <a href="#" class="nav-item nav-link active">Employee Management</a>
             <a href="contact.html" class="nav-item nav-link">Contact</a>
+            <div class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
+              <div class="dropdown-menu rounded-0 m-0">
+                <a href="testimonial.html" class="dropdown-item">Testimonial</a>
+                <a href="404.html" class="dropdown-item">404 Error</a>
+                <a href="management-tool.html" class="dropdown-item">Management Tool</a>
+                <a href="budget-planner.html" class="dropdown-item">Budget Planner</a>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
@@ -142,37 +143,16 @@
     <!-- Footer End -->
 
     <!-- Back to Top -->
-    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top" title="Back to top"><i class="bi bi-arrow-up"></i></a>
   </div>
 
   <!-- JavaScript -->
   <script>
-    // Ensure the spinner is removed after the page loads
-    window.onload = function () {
-      const spinner = document.getElementById('spinner');
-      if (spinner) {
-        spinner.style.display = 'none';
-        console.log('Spinner hidden successfully.');
-      } else {
-        console.error('Spinner element not found.');
-      }
-    };
-
-    // Fallback: Hide spinner after a timeout in case onload fails
-    setTimeout(() => {
-      const spinner = document.getElementById('spinner');
-      if (spinner && spinner.style.display !== 'none') {
-        spinner.style.display = 'none';
-        console.warn('Fallback: Spinner hidden after timeout.');
-      }
-    }, 5000); // Adjust timeout as needed
-
     // Employee Management Logic (including overtime, filtering, export, and analytics)
     let employeeCount = 0;
     const employees = [];
 
     function addEmployee() { /* Same logic as above */ }
-    function updateEmployeeTable() { /* Same logic as above */ }
     function filterEmployees() { /* Same logic as above */ }
     function exportToCSV() { /* Same logic as above */ }
     function updateCharts() { /* Same logic as above */ }
