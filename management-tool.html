@@ -37,14 +37,16 @@
           <h1 class="m-0 text-primary">RiverStone</h1>
           <sub class="m-0 text-primary">Rental Homes & Investings</sub>
         </a>
-        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" title="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarCollapse">
           <div class="navbar-nav ms-auto">
             <a href="index.html" class="nav-item nav-link">Home</a>
             <a href="about.html" class="nav-item nav-link">About</a>
             <a href="management-tool.html" class="nav-item nav-link active">Management Tool</a>
+            <a href="cad.html" class="nav-item nav-link">Your Dream home design!</a>
             <div class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
               <div class="dropdown-menu rounded-0 m-0">
@@ -62,7 +64,7 @@
     </div>
     <!-- Navbar End -->
 
-    <!-- Content Section -->
+    <!-- Management Tool Section Start -->
     <div class="container mt-5">
       <h1 class="text-center mb-4">Advanced Employee Management Tool</h1>
 
@@ -121,7 +123,40 @@
         <canvas id="hoursChart" height="200"></canvas>
         <canvas id="earningsChart" height="200" class="mt-4"></canvas>
       </div>
+
+      <!-- Employee Scheduler Section -->
+      <h2 class="mt-5">Employee Scheduler</h2>
+      <div class="card p-4 shadow mb-4 wow fadeIn" data-wow-delay="0.1s">
+        <h3>Add a Shift</h3>
+        <form id="shiftForm">
+          <div class="form-group">
+            <label for="schedulerEmployeeName">Employee Name:</label>
+            <input type="text" id="schedulerEmployeeName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="schedulerAge">Age:</label>
+            <input type="number" id="schedulerAge" class="form-control" min="14" max="100" required>
+          </div>
+          <div class="form-group">
+            <label for="shiftDate">Date:</label>
+            <input type="date" id="shiftDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="shiftHours">Hours:</label>
+            <input type="number" id="shiftHours" class="form-control" min="1" max="12" required>
+          </div>
+          <div class="form-group">
+            <label for="timeOff">Time Off Request:</label>
+            <input type="checkbox" id="timeOff">
+          </div>
+          <button type="submit" class="btn btn-primary">Add Shift</button>
+        </form>
+      </div>
+
+      <!-- Calendar Section -->
+      <div id="calendar"></div>
     </div>
+    <!-- Management Tool Section End -->
 
     <!-- Footer Start -->
     <div class="container-fluid bg-dark text-white-50 footer pt-5 mt-5 wow fadeIn" data-wow-delay="0.1s">
@@ -147,24 +182,15 @@
     <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top" title="Back to top"><i class="bi bi-arrow-up"></i></a>
   </div>
 
-  <!-- JavaScript -->
-  <script>
-    // Employee Management Logic (including overtime, filtering, export, and analytics)
-    let employeeCount = 0;
-    const employees = [];
-
-    function addEmployee() { /* Same logic as above */ }
-    function filterEmployees() { /* Same logic as above */ }
-    function exportToCSV() { /* Same logic as above */ }
-    function updateCharts() { /* Same logic as above */ }
-  </script>
-
-  <!-- Required Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- JavaScript Libraries -->
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="lib/wow/wow.min.js"></script>
-  <script>
-    new WOW().init(); // Initialize WOW.js for animations
-  </script>
+  <script src="lib/easing/easing.min.js"></script>
+  <script src="lib/waypoints/waypoints.min.js"></script>
+  <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+  <!-- Template Javascript -->
+  <script src="js/main.js"></script>
 </body>
 </html>
