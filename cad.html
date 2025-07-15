@@ -80,20 +80,46 @@
             <h1 class="text-center mb-4">Your Dream home design!</h1>
             <p class="text-center mb-5">A full-featured paint workspace. Use tools to draw, paint, erase, select, and move objects. Layer shapes and freehand drawings as you would in Paint.</p>
             <div style="position:relative; width:900px; margin:0 auto;">
-                <!-- Tools inside workspace, left side vertical -->
-                <div class="cad-toolbar" style="position:absolute; left:0; top:0; z-index:2; background:rgba(255,255,255,0.95); border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); padding:10px 5px; display:flex; flex-direction:column; gap:8px;">
-                    <button class="btn btn-outline-primary" id="selectBtn" title="Select/Move">🖱️</button>
-                    <button class="btn btn-outline-primary" id="rectBtn" title="Rectangle">▭</button>
-                    <button class="btn btn-outline-primary" id="circleBtn" title="Circle">◯</button>
-                    <button class="btn btn-outline-primary" id="triangleBtn" title="Triangle">△</button>
-                    <button class="btn btn-outline-primary" id="lineBtn" title="Line">／</button>
-                    <button class="btn btn-outline-primary" id="brushBtn" title="Brush">🖌️</button>
-                    <button class="btn btn-outline-primary" id="eraserBtn" title="Eraser">🧽</button>
-                    <input type="color" id="colorPicker" value="#007bff" title="Pick color" style="width:32px;height:32px;padding:0;border:none;">
-                    <input type="range" id="sizePicker" min="1" max="30" value="5" title="Brush/Line Size" style="width:32px;">
-                    <button class="btn btn-outline-secondary" onclick="clearCanvas()" title="Clear">🗑️</button>
+                <!-- Toolbar across top, grouped by object type -->
+                <div class="cad-toolbar" style="position:absolute; left:0; top:0; right:0; z-index:2; background:rgba(255,255,255,0.95); border-radius:8px 8px 0 0; box-shadow:0 2px 8px rgba(0,0,0,0.05); padding:8px 10px; display:flex; flex-direction:row; gap:18px; align-items:center; width:900px;">
+                    <!-- Basic shapes -->
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <span style="font-size:13px; font-weight:500;">Shapes:</span>
+                        <button class="btn btn-sm btn-outline-primary" id="rectBtn" title="Rectangle">▭</button>
+                        <button class="btn btn-sm btn-outline-primary" id="circleBtn" title="Circle">◯</button>
+                        <button class="btn btn-sm btn-outline-primary" id="triangleBtn" title="Triangle">△</button>
+                        <button class="btn btn-sm btn-outline-primary" id="lineBtn" title="Line">／</button>
+                    </div>
+                    <!-- 3D objects -->
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <span style="font-size:13px; font-weight:500;">3D:</span>
+                        <button class="btn btn-sm btn-outline-primary" id="coneBtn" title="Cone">🔺</button>
+                        <button class="btn btn-sm btn-outline-primary" id="cylinderBtn" title="Cylinder">🟢</button>
+                        <button class="btn btn-sm btn-outline-primary" id="tubeBtn" title="Tube">🟣</button>
+                    </div>
+                    <!-- Drawing tools -->
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <span style="font-size:13px; font-weight:500;">Tools:</span>
+                        <button class="btn btn-sm btn-outline-primary" id="brushBtn" title="Brush">🖌️</button>
+                        <button class="btn btn-sm btn-outline-primary" id="eraserBtn" title="Eraser">🧽</button>
+                        <button class="btn btn-sm btn-outline-primary" id="fillBtn" title="Fill Area">🪣</button>
+                        <button class="btn btn-sm btn-outline-primary" id="textBtn" title="Text">A</button>
+                        <button class="btn btn-sm btn-outline-primary" id="selectBtn" title="Select/Move">🖱️</button>
+                    </div>
+                    <!-- Color/size -->
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input type="color" id="colorPicker" value="#007bff" title="Pick color" style="width:28px;height:28px;padding:0;border:none;">
+                        <input type="range" id="sizePicker" min="1" max="30" value="5" title="Brush/Line Size" style="width:60px;">
+                    </div>
+                    <!-- Actions -->
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="btn btn-sm btn-outline-secondary" id="clearBtn" title="Clear">🗑️</button>
+                        <button class="btn btn-sm btn-outline-primary" id="undoBtn" title="Undo">↶</button>
+                        <button class="btn btn-sm btn-outline-primary" id="redoBtn" title="Redo">↷</button>
+                        <button class="btn btn-sm btn-outline-primary" id="saveBtn" title="Save Image">💾</button>
+                    </div>
                 </div>
-                <canvas id="cad-canvas" width="900" height="600" style="display:block; background:white;"></canvas>
+                <canvas id="cad-canvas" width="900" height="600" style="display:block; background:white; margin-top:48px;"></canvas>
             </div>
         </div>
         <!-- CAD Section End -->
@@ -107,6 +133,8 @@
     <script src="js/main.js"></script>
     <script>
         // filepath: c:\Users\Dell User\OneDrive\Desktop\realestate_project\real-estate-html-template\cad.html
+        const canvas = document.getElementById('cad-canvas');
+        const ctx = canvas.getContext('2d');
         let drawing = false, moving = false, resizing = false, selecting = false, selectedShape = null, brushing = false, erasing = false;
         let startX = 0, startY = 0, endX = 0, endY = 0;
         let currentTool = 'brush';
@@ -115,9 +143,41 @@
         let shapes = [];
         let brushPoints = [];
         let resizeHandle = null;
+        let undoStack = [];
+        let redoStack = [];
+        let textInput = null;
 
-        const canvas = document.getElementById('cad-canvas');
-        const ctx = canvas.getContext('2d');
+        // Tool selection
+        window.onload = function() {
+            function setTool(tool, brush, erase) {
+                currentTool = tool;
+                brushing = brush;
+                erasing = erase;
+            }
+            // Shapes
+            document.getElementById('rectBtn').onclick = function() { setTool('rect', false, false); };
+            document.getElementById('circleBtn').onclick = function() { setTool('circle', false, false); };
+            document.getElementById('triangleBtn').onclick = function() { setTool('triangle', false, false); };
+            document.getElementById('lineBtn').onclick = function() { setTool('line', false, false); };
+            // 3D
+            document.getElementById('coneBtn').onclick = function() { setTool('cone', false, false); };
+            document.getElementById('cylinderBtn').onclick = function() { setTool('cylinder', false, false); };
+            document.getElementById('tubeBtn').onclick = function() { setTool('tube', false, false); };
+            // Tools
+            document.getElementById('brushBtn').onclick = function() { setTool('brush', true, false); };
+            document.getElementById('eraserBtn').onclick = function() { setTool('eraser', false, true); };
+            document.getElementById('fillBtn').onclick = function() { setTool('fill', false, false); };
+            document.getElementById('textBtn').onclick = function() { setTool('text', false, false); };
+            document.getElementById('selectBtn').onclick = function() { setTool('select', false, false); };
+            // Actions
+            document.getElementById('undoBtn').onclick = undo;
+            document.getElementById('redoBtn').onclick = redo;
+            document.getElementById('saveBtn').onclick = saveImage;
+            document.getElementById('clearBtn').onclick = clearCanvas;
+            document.getElementById('colorPicker').oninput = function(e) { color = e.target.value; };
+            document.getElementById('sizePicker').oninput = function(e) { size = e.target.value; };
+            drawAllShapes();
+        };
 
         function drawAllShapes(previewShape = null) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -179,6 +239,77 @@
                     context.moveTo(shape.points[i].x, shape.points[i].y);
                     context.lineTo(shape.points[i + 1].x, shape.points[i + 1].y);
                 }
+                context.stroke();
+                context.restore();
+            } else if (shape.type === 'text') {
+                context.save();
+                context.font = `${shape.size*4}px Arial`;
+                context.fillStyle = shape.color || "#007bff";
+                context.fillText(shape.value, shape.x, shape.y);
+                context.restore();
+            } else if (shape.type === 'cone') {
+                // Draw cone: triangle + base circle
+                context.save();
+                context.fillStyle = shape.color;
+                context.strokeStyle = highlight ? "#ff0000" : shape.color;
+                context.lineWidth = shape.size;
+                // Triangle
+                context.beginPath();
+                context.moveTo(shape.x, shape.y - shape.h); // tip
+                context.lineTo(shape.x - shape.r, shape.y); // left base
+                context.lineTo(shape.x + shape.r, shape.y); // right base
+                context.closePath();
+                context.fill();
+                context.stroke();
+                // Base circle
+                context.beginPath();
+                context.arc(shape.x, shape.y, shape.r, 0, 2 * Math.PI);
+                context.stroke();
+                context.restore();
+            } else if (shape.type === 'cylinder') {
+                // Draw cylinder: top/bottom circles + rectangle
+                context.save();
+                context.fillStyle = shape.color;
+                context.strokeStyle = highlight ? "#ff0000" : shape.color;
+                context.lineWidth = shape.size;
+                // Rectangle (body)
+                context.beginPath();
+                context.rect(shape.x - shape.r, shape.y - shape.h, shape.r * 2, shape.h);
+                context.fill();
+                context.stroke();
+                // Top circle
+                context.beginPath();
+                context.arc(shape.x, shape.y - shape.h, shape.r, 0, 2 * Math.PI);
+                context.stroke();
+                // Bottom circle
+                context.beginPath();
+                context.arc(shape.x, shape.y, shape.r, 0, 2 * Math.PI);
+                context.stroke();
+                context.restore();
+            } else if (shape.type === 'tube') {
+                // Draw tube: top/bottom circles (outer/inner) + rectangle (body)
+                context.save();
+                context.fillStyle = shape.color;
+                context.strokeStyle = highlight ? "#ff0000" : shape.color;
+                context.lineWidth = shape.size;
+                // Outer rectangle
+                context.beginPath();
+                context.rect(shape.x - shape.rOuter, shape.y - shape.h, shape.rOuter * 2, shape.h);
+                context.fill();
+                context.stroke();
+                // Top circles
+                context.beginPath();
+                context.arc(shape.x, shape.y - shape.h, shape.rOuter, 0, 2 * Math.PI);
+                context.stroke();
+                context.beginPath();
+                context.arc(shape.x, shape.y - shape.h, shape.rInner, 0, 2 * Math.PI);
+                context.stroke();
+                // Bottom circles
+                context.beginPath();
+                context.arc(shape.x, shape.y, shape.rOuter, 0, 2 * Math.PI);
+                context.stroke();
+                context.beginPath();
+                context.arc(shape.x, shape.y, shape.rInner, 0, 2 * Math.PI);
                 context.stroke();
                 context.restore();
             }
@@ -270,8 +401,42 @@
                     selectedShape = null;
                 }
             } else if (currentTool === 'brush' || currentTool === 'eraser') {
+                pushUndo();
                 drawing = true;
                 brushPoints = [{x: startX, y: startY}];
+            } else if (currentTool === 'fill') {
+                pushUndo();
+                floodFill(Math.floor(startX), Math.floor(startY), color);
+            } else if (currentTool === 'text') {
+                // Show text input at mouse position
+                if (!textInput) {
+                    textInput = document.createElement('input');
+                    textInput.type = 'text';
+                    textInput.style.position = 'absolute';
+                    textInput.style.left = (rect.left + startX) + 'px';
+                    textInput.style.top = (rect.top + startY) + 'px';
+                    textInput.style.zIndex = 10;
+                    textInput.style.fontSize = (size*4) + 'px';
+                    textInput.style.color = color;
+                    textInput.style.background = "#fff";
+                    textInput.style.border = "1px solid #007bff";
+                    textInput.style.padding = "2px 4px";
+                    document.body.appendChild(textInput);
+                    textInput.focus();
+                    textInput.onblur = function() {
+                        if (textInput.value.trim()) {
+                            pushUndo();
+                            addText(startX, startY, textInput.value, color, size);
+                        }
+                        document.body.removeChild(textInput);
+                        textInput = null;
+                    };
+                    textInput.onkeydown = function(ev) {
+                        if (ev.key === "Enter") {
+                            textInput.blur();
+                        }
+                    };
+                }
             } else {
                 drawing = true;
             }
@@ -391,6 +556,44 @@
                         color: color,
                         size: size
                     };
+                } else if (currentTool === 'cone') {
+                    // Draw cone as triangle with base circle
+                    const r = Math.abs(endX - startX) / 2;
+                    shape = {
+                        type: 'cone',
+                        x: startX,
+                        y: startY,
+                        r: r,
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'cylinder') {
+                    // Draw cylinder as two circles and rectangle
+                    const r = Math.abs(endX - startX) / 2;
+                    shape = {
+                        type: 'cylinder',
+                        x: startX,
+                        y: startY,
+                        r: r,
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'tube') {
+                    // Draw tube as two concentric circles and rectangle
+                    const rOuter = Math.abs(endX - startX) / 2;
+                    const rInner = rOuter * 0.6;
+                    shape = {
+                        type: 'tube',
+                        x: startX,
+                        y: startY,
+                        rOuter: rOuter,
+                        rInner: rInner,
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
                 }
                 drawAllShapes(shape);
             }
@@ -462,6 +665,41 @@
                         color: color,
                         size: size
                     };
+                } else if (currentTool === 'cone') {
+                    const r = Math.abs(endX - startX) / 2;
+                    shape = {
+                        type: 'cone',
+                        x: startX,
+                        y: startY,
+                        r: r,
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'cylinder') {
+                    const r = Math.abs(endX - startX) / 2;
+                    shape = {
+                        type: 'cylinder',
+                        x: startX,
+                        y: startY,
+                        r: r,
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'tube') {
+                    const rOuter = Math.abs(endX - startX) / 2;
+                    const rInner = rOuter * 0.6;
+                    shape = {
+                        type: 'tube',
+                        x: startX,
+                        y: startY,
+                        rOuter: rOuter,
+                        rInner: rInner,
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
                 }
                 if (shape) shapes.push(shape);
                 drawAllShapes();
@@ -478,7 +716,146 @@
             drawAllShapes();
         }
 
-        window.onload = drawAllShapes;
+        // Undo/Redo logic
+        function pushUndo() {
+            undoStack.push(JSON.stringify(shapes));
+            if (undoStack.length > 50) undoStack.shift();
+            redoStack = [];
+        }
+        function undo() {
+            if (undoStack.length > 0) {
+                redoStack.push(JSON.stringify(shapes));
+                shapes = JSON.parse(undoStack.pop());
+                drawAllShapes();
+            }
+        }
+        function redo() {
+            if (redoStack.length > 0) {
+                undoStack.push(JSON.stringify(shapes));
+                shapes = JSON.parse(redoStack.pop());
+                drawAllShapes();
+            }
+        }
+
+        // Save as image
+        function saveImage() {
+            const link = document.createElement('a');
+            link.download = 'cad-drawing.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Fill tool (simple flood fill for brush/eraser, or fill shape if clicked inside)
+        function floodFill(x, y, fillColor) {
+            // Simple pixel-based flood fill (for demonstration, not optimized)
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const stack = [[x, y]];
+            const targetColor = getPixelColor(data, x, y);
+            const fillR = parseInt(fillColor.substr(1,2),16);
+            const fillG = parseInt(fillColor.substr(3,2),16);
+            const fillB = parseInt(fillColor.substr(5,2),16);
+
+            function matchColor(i) {
+                return data[i] === targetColor[0] && data[i+1] === targetColor[1] && data[i+2] === targetColor[2];
+            }
+            function setColor(i) {
+                data[i] = fillR; data[i+1] = fillG; data[i+2] = fillB; data[i+3] = 255;
+            }
+            while (stack.length) {
+                let [px, py] = stack.pop();
+                if (px < 0 || px >= canvas.width || py < 0 || py >= canvas.height) continue;
+                let i = (py * canvas.width + px) * 4;
+                if (matchColor(i)) {
+                    setColor(i);
+                    stack.push([px+1, py]); stack.push([px-1, py]);
+                    stack.push([px, py+1]); stack.push([px, py-1]);
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+        function getPixelColor(data, x, y) {
+            let i = (y * canvas.width + x) * 4;
+            return [data[i], data[i+1], data[i+2]];
+        }
+
+        // Text tool
+        function addText(x, y, value, color, size) {
+            shapes.push({
+                type: 'text',
+                x, y, value, color, size
+            });
+            drawAllShapes();
+        }
+
+        // Make sure the DOM is loaded before attaching event listeners
+        window.onload = function() {
+            drawAllShapes();
+
+            function setTool(tool, brush, erase) {
+                currentTool = tool;
+                brushing = brush;
+                erasing = erase;
+            }
+            // Shapes
+            document.getElementById('rectBtn').onclick = function() { setTool('rect', false, false); };
+            document.getElementById('circleBtn').onclick = function() { setTool('circle', false, false); };
+            document.getElementById('triangleBtn').onclick = function() { setTool('triangle', false, false); };
+            document.getElementById('lineBtn').onclick = function() { setTool('line', false, false); };
+            // 3D
+            document.getElementById('coneBtn').onclick = function() { setTool('cone', false, false); };
+            document.getElementById('cylinderBtn').onclick = function() { setTool('cylinder', false, false); };
+            document.getElementById('tubeBtn').onclick = function() { setTool('tube', false, false); };
+            // Tools
+            document.getElementById('brushBtn').onclick = function() { setTool('brush', true, false); };
+            document.getElementById('eraserBtn').onclick = function() { setTool('eraser', false, true); };
+            document.getElementById('fillBtn').onclick = function() { setTool('fill', false, false); };
+            document.getElementById('textBtn').onclick = function() { setTool('text', false, false); };
+            document.getElementById('selectBtn').onclick = function() { setTool('select', false, false); };
+            // Actions
+            document.getElementById('undoBtn').onclick = undo;
+            document.getElementById('redoBtn').onclick = redo;
+            document.getElementById('saveBtn').onclick = saveImage;
+            document.getElementById('clearBtn').onclick = clearCanvas;
+            document.getElementById('colorPicker').oninput = function(e) { color = e.target.value; };
+            document.getElementById('sizePicker').oninput = function(e) { size = e.target.value; };
+
+            // After drawing an object, stay in the same tool until user changes tool
+            // (No change needed in mouse event logic, just don't reset tool after drawing)
+
+            drawAllShapes();
+        };
+
+        // Helper: getShapeAt for selection
+        function getShapeAt(x, y) {
+            for (let i = shapes.length - 1; i >= 0; i--) {
+                const shape = shapes[i];
+                if (shape.type === 'rect') {
+                    if (x >= shape.x && x <= shape.x + shape.w && y >= shape.y && y <= shape.y + shape.h) return i;
+                } else if (shape.type === 'circle') {
+                    if (Math.hypot(x - shape.x, y - shape.y) <= shape.r) return i;
+                } else if (shape.type === 'triangle') {
+                    // Simple bounding box for triangle
+                    if (x >= shape.x && x <= shape.x + shape.w && y <= shape.y && y >= shape.y - shape.h) return i;
+                } else if (shape.type === 'line') {
+                    // Proximity to line segment
+                    let dist = Math.abs((shape.x2-shape.x1)*(shape.y1-y)-(shape.x1-x)*(shape.y2-shape.y1)) /
+                        Math.sqrt(Math.pow(shape.x2-shape.x1,2)+Math.pow(shape.y2-shape.y1,2));
+                    if (dist < 8) return i;
+                } else if (shape.type === 'cone' || shape.type === 'cylinder' || shape.type === 'tube') {
+                    // Use bounding box for selection
+                    if (x >= shape.x - (shape.r || shape.rOuter) && x <= shape.x + (shape.r || shape.rOuter) &&
+                        y >= shape.y - (shape.h || 0) && y <= shape.y) return i;
+                } else if (shape.type === 'brush' || shape.type === 'eraser') {
+                    // Not selectable
+                    continue;
+                } else if (shape.type === 'text') {
+                    // Simple bounding box
+                    if (x >= shape.x && x <= shape.x + 50 && y >= shape.y - 30 && y <= shape.y + 10) return i;
+                }
+            }
+            return null;
+        }
     </script>
 </body>
 
