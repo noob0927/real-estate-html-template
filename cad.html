@@ -22,6 +22,7 @@
             height: 600px;
             display: block;
             margin: 0 auto;
+            cursor: crosshair;
         }
 
         .cad-toolbar {
@@ -29,7 +30,8 @@
             margin-bottom: 20px;
         }
 
-        .cad-toolbar button {
+        .cad-toolbar button,
+        .cad-toolbar input[type="color"] {
             margin: 0 5px;
         }
     </style>
@@ -76,13 +78,23 @@
         <!-- CAD Section Start -->
         <div class="container py-5">
             <h1 class="text-center mb-4">Your Dream home design!</h1>
-            <p class="text-center mb-5">Use the tools below to start designing your dream home. (This is a custom CAD canvas placeholder.)</p>
-            <div class="cad-toolbar">
-                <button class="btn btn-outline-primary" onclick="drawRect()">Draw Rectangle</button>
-                <button class="btn btn-outline-primary" onclick="drawCircle()">Draw Circle</button>
-                <button class="btn btn-outline-secondary" onclick="clearCanvas()">Clear</button>
+            <p class="text-center mb-5">A full-featured paint workspace. Use tools to draw, paint, erase, select, and move objects. Layer shapes and freehand drawings as you would in Paint.</p>
+            <div style="position:relative; width:900px; margin:0 auto;">
+                <!-- Tools inside workspace, left side vertical -->
+                <div class="cad-toolbar" style="position:absolute; left:0; top:0; z-index:2; background:rgba(255,255,255,0.95); border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); padding:10px 5px; display:flex; flex-direction:column; gap:8px;">
+                    <button class="btn btn-outline-primary" id="selectBtn" title="Select/Move">🖱️</button>
+                    <button class="btn btn-outline-primary" id="rectBtn" title="Rectangle">▭</button>
+                    <button class="btn btn-outline-primary" id="circleBtn" title="Circle">◯</button>
+                    <button class="btn btn-outline-primary" id="triangleBtn" title="Triangle">△</button>
+                    <button class="btn btn-outline-primary" id="lineBtn" title="Line">／</button>
+                    <button class="btn btn-outline-primary" id="brushBtn" title="Brush">🖌️</button>
+                    <button class="btn btn-outline-primary" id="eraserBtn" title="Eraser">🧽</button>
+                    <input type="color" id="colorPicker" value="#007bff" title="Pick color" style="width:32px;height:32px;padding:0;border:none;">
+                    <input type="range" id="sizePicker" min="1" max="30" value="5" title="Brush/Line Size" style="width:32px;">
+                    <button class="btn btn-outline-secondary" onclick="clearCanvas()" title="Clear">🗑️</button>
+                </div>
+                <canvas id="cad-canvas" width="900" height="600" style="display:block; background:white;"></canvas>
             </div>
-            <canvas id="cad-canvas" width="900" height="600"></canvas>
         </div>
         <!-- CAD Section End -->
 
@@ -94,25 +106,379 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js"></script>
     <script>
-        // Simple CAD canvas drawing logic
+        // filepath: c:\Users\Dell User\OneDrive\Desktop\realestate_project\real-estate-html-template\cad.html
+        let drawing = false, moving = false, resizing = false, selecting = false, selectedShape = null, brushing = false, erasing = false;
+        let startX = 0, startY = 0, endX = 0, endY = 0;
+        let currentTool = 'brush';
+        let color = document.getElementById('colorPicker').value;
+        let size = document.getElementById('sizePicker').value;
+        let shapes = [];
+        let brushPoints = [];
+        let resizeHandle = null;
+
         const canvas = document.getElementById('cad-canvas');
         const ctx = canvas.getContext('2d');
 
-        function drawRect() {
-            ctx.fillStyle = "#007bff";
-            ctx.fillRect(100, 100, 200, 150);
+        function drawAllShapes(previewShape = null) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            shapes.forEach((shape, idx) => {
+                drawShape(ctx, shape, selectedShape === idx);
+                if (selectedShape === idx) drawHandles(shape);
+            });
+            if (previewShape) {
+                drawShape(ctx, previewShape, true);
+            }
         }
 
-        function drawCircle() {
+        function drawShape(context, shape, highlight = false) {
+            context.save();
+            context.fillStyle = shape.color || "#007bff";
+            context.strokeStyle = highlight ? "#ff0000" : shape.color || "#007bff";
+            context.lineWidth = highlight ? 1 : 0.5; // Smaller outline
+            if (shape.type === 'rect') {
+                context.beginPath();
+                context.rect(shape.x, shape.y, shape.w, shape.h);
+                context.fill();
+                if (highlight) context.stroke();
+            } else if (shape.type === 'circle') {
+                context.beginPath();
+                context.arc(shape.x, shape.y, shape.r, 0, 2 * Math.PI);
+                context.fill();
+                if (highlight) context.stroke();
+            } else if (shape.type === 'triangle') {
+                context.beginPath();
+                context.moveTo(shape.x, shape.y);
+                context.lineTo(shape.x + shape.w, shape.y);
+                context.lineTo(shape.x + shape.w / 2, shape.y - shape.h);
+                context.closePath();
+                context.fill();
+                if (highlight) context.stroke();
+            } else if (shape.type === 'line') {
+                context.beginPath();
+                context.moveTo(shape.x1, shape.y1);
+                context.lineTo(shape.x2, shape.y2);
+                context.strokeStyle = shape.color;
+                context.lineWidth = shape.size || 1;
+                context.stroke();
+            } else if (shape.type === 'brush') {
+                context.strokeStyle = shape.color;
+                context.lineWidth = shape.size;
+                context.beginPath();
+                for (let i = 0; i < shape.points.length - 1; i++) {
+                    context.moveTo(shape.points[i].x, shape.points[i].y);
+                    context.lineTo(shape.points[i + 1].x, shape.points[i + 1].y);
+                }
+                context.stroke();
+            } else if (shape.type === 'eraser') {
+                context.save();
+                context.globalCompositeOperation = 'destination-out';
+                context.strokeStyle = "#fff";
+                context.lineWidth = shape.size;
+                context.beginPath();
+                for (let i = 0; i < shape.points.length - 1; i++) {
+                    context.moveTo(shape.points[i].x, shape.points[i].y);
+                    context.lineTo(shape.points[i + 1].x, shape.points[i + 1].y);
+                }
+                context.stroke();
+                context.restore();
+            }
+            context.restore();
+        }
+
+        // Draw resize handles for selected shape
+        function drawHandles(shape) {
+            ctx.save();
+            ctx.fillStyle = "#333";
+            if (shape.type === 'rect') {
+                drawHandle(shape.x, shape.y);
+                drawHandle(shape.x + shape.w, shape.y);
+                drawHandle(shape.x, shape.y + shape.h);
+                drawHandle(shape.x + shape.w, shape.y + shape.h);
+            } else if (shape.type === 'circle') {
+                drawHandle(shape.x + shape.r, shape.y);
+                drawHandle(shape.x - shape.r, shape.y);
+                drawHandle(shape.x, shape.y + shape.r);
+                drawHandle(shape.x, shape.y - shape.r);
+            } else if (shape.type === 'line') {
+                drawHandle(shape.x1, shape.y1);
+                drawHandle(shape.x2, shape.y2);
+            } else if (shape.type === 'triangle') {
+                drawHandle(shape.x, shape.y);
+                drawHandle(shape.x + shape.w, shape.y);
+                drawHandle(shape.x + shape.w / 2, shape.y - shape.h);
+            }
+            ctx.restore();
+        }
+        function drawHandle(x, y) {
             ctx.beginPath();
-            ctx.arc(500, 300, 75, 0, 2 * Math.PI);
-            ctx.fillStyle = "#28a745";
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
             ctx.fill();
         }
 
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Detect if mouse is over a handle
+        function getHandleAt(shape, x, y) {
+            let handles = [];
+            if (shape.type === 'rect') {
+                handles = [
+                    {x: shape.x, y: shape.y, corner: 'tl'},
+                    {x: shape.x + shape.w, y: shape.y, corner: 'tr'},
+                    {x: shape.x, y: shape.y + shape.h, corner: 'bl'},
+                    {x: shape.x + shape.w, y: shape.y + shape.h, corner: 'br'}
+                ];
+            } else if (shape.type === 'circle') {
+                handles = [
+                    {x: shape.x + shape.r, y: shape.y, corner: 'r'},
+                    {x: shape.x - shape.r, y: shape.y, corner: 'l'},
+                    {x: shape.x, y: shape.y + shape.r, corner: 'b'},
+                    {x: shape.x, y: shape.y - shape.r, corner: 't'}
+                ];
+            } else if (shape.type === 'line') {
+                handles = [
+                    {x: shape.x1, y: shape.y1, corner: 'start'},
+                    {x: shape.x2, y: shape.y2, corner: 'end'}
+                ];
+            } else if (shape.type === 'triangle') {
+                handles = [
+                    {x: shape.x, y: shape.y, corner: 'a'},
+                    {x: shape.x + shape.w, y: shape.y, corner: 'b'},
+                    {x: shape.x + shape.w / 2, y: shape.y - shape.h, corner: 'c'}
+                ];
+            }
+            for (let h of handles) {
+                if (Math.abs(x - h.x) < 8 && Math.abs(y - h.y) < 8) return h.corner;
+            }
+            return null;
         }
+
+        canvas.onmousedown = function (e) {
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            if (currentTool === 'select') {
+                const idx = getShapeAt(startX, startY);
+                if (idx !== null) {
+                    selectedShape = idx;
+                    const shape = shapes[selectedShape];
+                    const handle = getHandleAt(shape, startX, startY);
+                    if (handle) {
+                        resizing = true;
+                        resizeHandle = handle;
+                    } else {
+                        selecting = true;
+                    }
+                } else {
+                    selectedShape = null;
+                }
+            } else if (currentTool === 'brush' || currentTool === 'eraser') {
+                drawing = true;
+                brushPoints = [{x: startX, y: startY}];
+            } else {
+                drawing = true;
+            }
+            drawAllShapes();
+        };
+
+        canvas.onmousemove = function (e) {
+            const rect = canvas.getBoundingClientRect();
+            endX = e.clientX - rect.left;
+            endY = e.clientY - rect.top;
+            if (resizing && selectedShape !== null) {
+                const shape = shapes[selectedShape];
+                if (shape.type === 'rect') {
+                    if (resizeHandle === 'tl') {
+                        shape.w += shape.x - endX;
+                        shape.h += shape.y - endY;
+                        shape.x = endX;
+                        shape.y = endY;
+                    } else if (resizeHandle === 'tr') {
+                        shape.w = endX - shape.x;
+                        shape.h += shape.y - endY;
+                        shape.y = endY;
+                    } else if (resizeHandle === 'bl') {
+                        shape.w += shape.x - endX;
+                        shape.x = endX;
+                        shape.h = endY - shape.y;
+                    } else if (resizeHandle === 'br') {
+                        shape.w = endX - shape.x;
+                        shape.h = endY - shape.y;
+                    }
+                } else if (shape.type === 'circle') {
+                    let dx = endX - shape.x, dy = endY - shape.y;
+                    shape.r = Math.sqrt(dx*dx + dy*dy);
+                } else if (shape.type === 'line') {
+                    if (resizeHandle === 'start') {
+                        shape.x1 = endX; shape.y1 = endY;
+                    } else if (resizeHandle === 'end') {
+                        shape.x2 = endX; shape.y2 = endY;
+                    }
+                } else if (shape.type === 'triangle') {
+                    if (resizeHandle === 'a') {
+                        shape.x = endX; shape.y = endY;
+                    } else if (resizeHandle === 'b') {
+                        shape.w = endX - shape.x; shape.y = endY;
+                    } else if (resizeHandle === 'c') {
+                        shape.w = (endX - shape.x) * 2;
+                        shape.h = shape.y - endY;
+                    }
+                }
+                drawAllShapes();
+            } else if (selecting && selectedShape !== null) {
+                const shape = shapes[selectedShape];
+                let dx = endX - startX, dy = endY - startY;
+                startX = endX; startY = endY;
+                if (shape.type === 'rect' || shape.type === 'triangle') {
+                    shape.x += dx; shape.y += dy;
+                } else if (shape.type === 'circle') {
+                    shape.x += dx; shape.y += dy;
+                } else if (shape.type === 'line') {
+                    shape.x1 += dx; shape.y1 += dy;
+                    shape.x2 += dx; shape.y2 += dy;
+                }
+                drawAllShapes();
+            } else if (drawing && (brushing || erasing)) {
+                brushPoints.push({x: endX, y: endY});
+                drawAllShapes();
+                ctx.save();
+                ctx.strokeStyle = erasing ? "#fff" : color;
+                ctx.lineWidth = size;
+                ctx.beginPath();
+                for (let i = 0; i < brushPoints.length - 1; i++) {
+                    ctx.moveTo(brushPoints[i].x, brushPoints[i].y);
+                    ctx.lineTo(brushPoints[i + 1].x, brushPoints[i + 1].y);
+                }
+                ctx.stroke();
+                ctx.restore();
+            } else if (drawing && (currentTool !== 'brush' && currentTool !== 'eraser' && currentTool !== 'select')) {
+                // Live preview shape
+                let shape;
+                if (currentTool === 'rect') {
+                    shape = {
+                        type: 'rect',
+                        x: Math.min(startX, endX),
+                        y: Math.min(startY, endY),
+                        w: Math.abs(endX - startX),
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'circle') {
+                    const r = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                    shape = {
+                        type: 'circle',
+                        x: startX,
+                        y: startY,
+                        r: r,
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'triangle') {
+                    shape = {
+                        type: 'triangle',
+                        x: Math.min(startX, endX),
+                        y: Math.max(startY, endY),
+                        w: Math.abs(endX - startX),
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'line') {
+                    shape = {
+                        type: 'line',
+                        x1: startX,
+                        y1: startY,
+                        x2: endX,
+                        y2: endY,
+                        color: color,
+                        size: size
+                    };
+                }
+                drawAllShapes(shape);
+            }
+        };
+
+        canvas.onmouseup = function (e) {
+            const rect = canvas.getBoundingClientRect();
+            endX = e.clientX - rect.left;
+            endY = e.clientY - rect.top;
+            if (drawing && (brushing || erasing)) {
+                if (currentTool === 'brush') {
+                    shapes.push({
+                        type: 'brush',
+                        points: brushPoints.slice(),
+                        color: color,
+                        size: size
+                    });
+                } else if (currentTool === 'eraser') {
+                    shapes.push({
+                        type: 'eraser',
+                        points: brushPoints.slice(),
+                        size: size
+                    });
+                }
+                drawing = false;
+                brushPoints = [];
+                drawAllShapes();
+            }
+            if (drawing && (currentTool !== 'brush' && currentTool !== 'eraser' && currentTool !== 'select')) {
+                // Add shape directly, no confirmation
+                let shape;
+                if (currentTool === 'rect') {
+                    shape = {
+                        type: 'rect',
+                        x: Math.min(startX, endX),
+                        y: Math.min(startY, endY),
+                        w: Math.abs(endX - startX),
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'circle') {
+                    const r = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                    shape = {
+                        type: 'circle',
+                        x: startX,
+                        y: startY,
+                        r: r,
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'triangle') {
+                    shape = {
+                        type: 'triangle',
+                        x: Math.min(startX, endX),
+                        y: Math.max(startY, endY),
+                        w: Math.abs(endX - startX),
+                        h: Math.abs(endY - startY),
+                        color: color,
+                        size: size
+                    };
+                } else if (currentTool === 'line') {
+                    shape = {
+                        type: 'line',
+                        x1: startX,
+                        y1: startY,
+                        x2: endX,
+                        y2: endY,
+                        color: color,
+                        size: size
+                    };
+                }
+                if (shape) shapes.push(shape);
+                drawAllShapes();
+                drawing = false;
+            }
+            resizing = false;
+            selecting = false;
+            resizeHandle = null;
+        };
+
+        function clearCanvas() {
+            shapes = [];
+            selectedShape = null;
+            drawAllShapes();
+        }
+
+        window.onload = drawAllShapes;
     </script>
 </body>
 
