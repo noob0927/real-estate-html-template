@@ -13,6 +13,26 @@
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <!-- Template CSS -->
     <link href="css/style.css" rel="stylesheet">
+    <style>
+        /* Basic CAD canvas styling */
+        #cad-canvas {
+            border: 2px solid #007bff;
+            background: #f8f9fa;
+            width: 900px;
+            height: 600px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .cad-toolbar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .cad-toolbar button {
+            margin: 0 5px;
+        }
+    </style>
 </head>
 
 <body>
@@ -51,12 +71,13 @@
         <!-- CAD Section Start -->
         <div class="container py-5">
             <h1 class="text-center mb-4">Your Dream home design!</h1>
-            <p class="text-center mb-5">Use our CAD tool below to start designing your dream home. (Embed or link your CAD tool here.)</p>
-            <div class="d-flex justify-content-center">
-                <!-- Example placeholder for CAD embed -->
-                <iframe src="https://www.homestyler.com/int/" width="900" height="600" style="border:1px solid #ccc;"
-                    title="CAD Tool"></iframe>
+            <p class="text-center mb-5">Use the tools below to start designing your dream home. (This is a custom CAD canvas placeholder.)</p>
+            <div class="cad-toolbar">
+                <button class="btn btn-outline-primary" onclick="drawRect()">Draw Rectangle</button>
+                <button class="btn btn-outline-primary" onclick="drawCircle()">Draw Circle</button>
+                <button class="btn btn-outline-secondary" onclick="clearCanvas()">Clear</button>
             </div>
+            <canvas id="cad-canvas" width="900" height="600"></canvas>
         </div>
         <!-- CAD Section End -->
 
@@ -67,6 +88,27 @@
     <!-- JavaScript Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // Simple CAD canvas drawing logic
+        const canvas = document.getElementById('cad-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawRect() {
+            ctx.fillStyle = "#007bff";
+            ctx.fillRect(100, 100, 200, 150);
+        }
+
+        function drawCircle() {
+            ctx.beginPath();
+            ctx.arc(500, 300, 75, 0, 2 * Math.PI);
+            ctx.fillStyle = "#28a745";
+            ctx.fill();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
 </body>
 
 </html>
